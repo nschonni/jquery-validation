@@ -119,17 +119,47 @@ grunt.initConfig({
 			files: ['<%= jshint.test.files.src %>', 'test/index.html'],
 			tasks: ['jshint:test']
 		}
+	},
+	connect: {
+		server: {
+			options: {
+				base: '.',
+				port: 8000
+			}
+		}
+	},
+	'saucelabs-qunit': {
+		all: {
+			options: {
+				urls: ['http://127.0.0.1:8000/test/index.html'],
+				tunnelTimeout: 5,
+				build: process.env.TRAVIS_JOB_ID ,
+				concurrency: 3,
+				browsers: grunt.file.readJSON('browsers.json'),
+				testname: 'jQuery Validation Travis Build #' + process.env.TRAVIS_BUILD_NUMBER,
+				tags: [
+					process.env.TRAVIS_BRANCH,
+					process.env.TRAVIS_COMMIT
+				]
+			}
+		}
 	}
 });
 
+grunt.loadNpmTasks('grunt-contrib-compress');
+grunt.loadNpmTasks('grunt-contrib-concat');
+grunt.loadNpmTasks('grunt-contrib-connect');
 grunt.loadNpmTasks('grunt-contrib-jshint');
 grunt.loadNpmTasks('grunt-contrib-qunit');
 grunt.loadNpmTasks('grunt-contrib-uglify');
-grunt.loadNpmTasks('grunt-contrib-concat');
-grunt.loadNpmTasks('grunt-contrib-compress');
 grunt.loadNpmTasks('grunt-contrib-watch');
 
-grunt.registerTask('default', ['concat', 'jshint', 'qunit']);
+if (process.env.TRAVIS_SECURE_ENV_VARS && process.env.TRAVIS_REPO_SLUG === "nschonni/jquery-validation") {
+	grunt.loadNpmTasks('grunt-saucelabs');
+	grunt.registerTask('default', ['concat', 'jshint', 'qunit', 'connect', 'saucelabs-qunit']);
+} else {
+	grunt.registerTask('default', ['concat', 'jshint', 'qunit']);
+}
 grunt.registerTask('release', ['default', 'uglify', 'compress']);
 
 };
